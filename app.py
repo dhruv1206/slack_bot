@@ -1,18 +1,66 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, redirect, url_for, session
+from flask_oauthlib.client import OAuth
 import requests
+import os
 from dotenv import load_dotenv
 import slack
-import os
 from slackeventsapi import SlackEventAdapter
 
 env_path = ".env"
 load_dotenv(dotenv_path=env_path)
 
 app = Flask(__name__)
+
+# Add OAuth configuration
+oauth = OAuth(app)
+slack = oauth.remote_app(
+    'slack',
+    consumer_key=os.environ['SLACK_CLIENT_ID'],
+    consumer_secret=os.environ['SLACK_CLIENT_SECRET'],
+    request_token_params={'scope': 'channels:read,chat:write'},
+    base_url='https://slack.com/api/',
+    request_token_url=None,
+    access_token_method='POST',
+    access_token_url='https://slack.com/api/oauth.access',
+    authorize_url='https://slack.com/oauth/authorize',
+)
+
 slack_event_adapter = SlackEventAdapter(
     os.environ["SIGNING_SECRET"], "/slack/events", app)
 client = slack.WebClient(token=os.environ['SLACK_BOT_TOKEN'])
 BOT_ID = client.api_call("auth.test")['user_id']
+
+# OAuth routes
+
+
+@app.route('/login')
+def login():
+    return slack.authorize(callback=url_for('authorized', _external=True))
+
+
+@app.route('/logout')
+def logout():
+    session.pop('slack_token', None)
+    return redirect(url_for('index'))
+
+
+@app.route('/authorized')
+@slack.authorized_handler
+def authorized(resp):
+    if resp is None or 'access_token' not in resp:
+        return 'Access denied: reason={} error={}'.format(
+            request.args['error_reason'],
+            request.args['error_description']
+        )
+    session['slack_token'] = (resp['access_token'], '')
+    return redirect(url_for('index'))
+
+
+@slack.tokengetter
+def get_slack_oauth_token():
+    return session.get('slack_token')
+
+# Add your existing code below this line
 
 
 @slack_event_adapter.on("app_mention")
