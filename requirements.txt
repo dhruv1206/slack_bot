@@ -1,0 +1,5 @@
+pip install flask
+pip install requests
+pip install dotenv
+pip install slackclient
+pip install slackeventsapi
