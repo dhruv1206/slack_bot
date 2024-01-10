@@ -3,13 +3,16 @@ from flask_oauthlib.client import OAuth
 import requests
 import os
 from dotenv import load_dotenv
-import slack
+from slack_sdk import WebClient
+from slack_sdk.oauth import OAuthStateStore, AuthorizeUrlGenerator
 from slackeventsapi import SlackEventAdapter
+
 
 env_path = ".env"
 load_dotenv(dotenv_path=env_path)
 
 app = Flask(__name__)
+app.secret_key = os.environ["FLASK_SECRET_KEY"]
 
 # Add OAuth configuration
 oauth = OAuth(app)
@@ -27,8 +30,7 @@ slack = oauth.remote_app(
 
 slack_event_adapter = SlackEventAdapter(
     os.environ["SIGNING_SECRET"], "/slack/events", app)
-client = slack.WebClient(token=os.environ['SLACK_BOT_TOKEN'])
-BOT_ID = client.api_call("auth.test")['user_id']
+client = WebClient(token=os.environ['SLACK_BOT_TOKEN'])
 
 # OAuth routes
 
@@ -69,7 +71,7 @@ def mention(payload):
     channel_id = event.get("channel")
     user_id = event.get("user")
     message = event.get("text").split("<@U06CV5K9LPR>")[1].strip()
-    if user_id != BOT_ID:
+    if user_id != client.token:  # Check if the user is the bot itself
         client.chat_postMessage(
             channel=channel_id, text=getTopNews(user_id, message))
 
@@ -81,8 +83,8 @@ def handle_message(payload):
     channel_id = event.get("channel")
     user_id = event.get("user")
     message = event.get("text")
-    print(user_id, BOT_ID)
-    if user_id != BOT_ID:
+    print(user_id, client.token)
+    if user_id != client.token:  # Check if the user is the bot itself
         client.chat_postMessage(
             channel=channel_id, text=getTopNews(user_id, message))
 
