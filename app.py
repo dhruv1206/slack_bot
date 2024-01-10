@@ -37,7 +37,7 @@ client = WebClient(token=os.environ['SLACK_BOT_TOKEN'])
 
 @app.route('/login')
 def login():
-    return slack.authorize(callback=url_for('authorized', _external=True))
+    return slack.authorize(callback=url_for('authorized', _external=True, _scheme='https'))
 
 
 @app.route('/logout')
