@@ -60,5 +60,10 @@ def getTopNews(user_id, message):
     return f"Sorry, I couldn't fetch news on {message} at the moment."
 
 
+@app.route('/check', methods=['GET'])
+def check():
+    return jsonify({'message': 'Hello World'})
+
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
