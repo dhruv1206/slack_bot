@@ -20,7 +20,7 @@ slack = oauth.remote_app(
     'slack',
     consumer_key=os.environ['SLACK_CLIENT_ID'],
     consumer_secret=os.environ['SLACK_CLIENT_SECRET'],
-    request_xtoken_params={'scope': 'app_mentions:read,chat:write,im:history'},
+    request_token_params={'scope': 'app_mentions:read,chat:write,im:history'},
     base_url='https://slack.com/api/',
     request_token_url=None,
     access_token_method='POST',
