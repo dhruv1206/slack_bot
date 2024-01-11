@@ -55,7 +55,7 @@ def authorized(resp):
             request.args['error_description']
         )
     session['slack_token'] = (resp['access_token'], '')
-    return redirect(url_for('index'))
+    return redirect(url_for('login'))
 
 
 @slack.tokengetter
