@@ -54,8 +54,19 @@ def authorized(resp):
             request.args['error_reason'],
             request.args['error_description']
         )
+
+    # Save the access token in the session
     session['slack_token'] = (resp['access_token'], '')
-    return redirect(url_for('login'))
+
+    # Use the obtained access token to get user information
+    user_info_response = slack.get('auth.test')
+    user_info = user_info_response.data
+
+    # Construct the URL to the user's home page
+    home_page_url = f'https://{user_info["team_domain"]}.slack.com/home'
+
+    # Redirect the user to their Slack home page
+    return redirect(home_page_url)
 
 
 @slack.tokengetter
