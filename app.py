@@ -20,6 +20,7 @@ def mention(payload):
     event = payload.get("event", {})
     channel_id = event.get("channel")
     user_id = event.get("user")
+    print(user_id, BOT_ID)
     message = event.get("text").split("<@U06CV5K9LPR>")[1].strip()
     if user_id != BOT_ID:
         client.chat_postMessage(
