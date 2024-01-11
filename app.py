@@ -24,7 +24,7 @@ slack = oauth.remote_app(
     base_url='https://slack.com/api/',
     request_token_url=None,
     access_token_method='POST',
-    access_token_url='https://slack.com/api/oauth.access',
+    access_token_url='https://slack.com/api/oauth.v2.access',
     authorize_url='https://slack.com/oauth/v2/authorize',
 )
 
