@@ -1,79 +1,18 @@
-from flask import Flask, request, jsonify, redirect, url_for, session
-from flask_oauthlib.client import OAuth
+from flask import Flask, request, jsonify
 import requests
-import os
 from dotenv import load_dotenv
-from slack_sdk import WebClient
-from slack_sdk.oauth import OAuthStateStore, AuthorizeUrlGenerator
+import slack
+import os
 from slackeventsapi import SlackEventAdapter
-
 
 env_path = ".env"
 load_dotenv(dotenv_path=env_path)
 
 app = Flask(__name__)
-app.secret_key = os.environ["FLASK_SECRET_KEY"]
-
-# Add OAuth configuration
-oauth = OAuth(app)
-slack = oauth.remote_app(
-    'slack',
-    consumer_key=os.environ['SLACK_CLIENT_ID'],
-    consumer_secret=os.environ['SLACK_CLIENT_SECRET'],
-    request_token_params={'scope': 'app_mentions:read,chat:write,im:history'},
-    base_url='https://slack.com/api/',
-    request_token_url=None,
-    access_token_method='POST',
-    access_token_url='https://slack.com/api/oauth.v2.access',
-    authorize_url='https://slack.com/oauth/v2/authorize',
-)
-
 slack_event_adapter = SlackEventAdapter(
     os.environ["SIGNING_SECRET"], "/slack/events", app)
-client = WebClient(token=os.environ['SLACK_BOT_TOKEN'])
-
-# OAuth routes
-
-
-@app.route('/login')
-def login():
-    return slack.authorize(callback=url_for('authorized', _external=True, _scheme='https'))
-
-
-@app.route('/logout')
-def logout():
-    session.pop('slack_token', None)
-    return redirect(url_for('index'))
-
-
-@app.route('/authorized')
-@slack.authorized_handler
-def authorized(resp):
-    if resp is None or 'access_token' not in resp:
-        return 'Access denied: reason={} error={}'.format(
-            request.args['error_reason'],
-            request.args['error_description']
-        )
-
-    # Save the access token in the session
-    session['slack_token'] = (resp['access_token'], '')
-
-    # Use the obtained access token to get user information
-    user_info_response = slack.get('auth.test')
-    user_info = user_info_response.data
-
-    # Construct the URL to the user's home page
-    home_page_url = f'https://{user_info["team_domain"]}.slack.com/home'
-
-    # Redirect the user to their Slack home page
-    return redirect(home_page_url)
-
-
-@slack.tokengetter
-def get_slack_oauth_token():
-    return session.get('slack_token')
-
-# Add your existing code below this line
+client = slack.WebClient(token=os.environ['SLACK_BOT_TOKEN'])
+BOT_ID = client.api_call("auth.test")['user_id']
 
 
 @slack_event_adapter.on("app_mention")
@@ -82,7 +21,7 @@ def mention(payload):
     channel_id = event.get("channel")
     user_id = event.get("user")
     message = event.get("text").split("<@U06CV5K9LPR>")[1].strip()
-    if user_id != client.token:  # Check if the user is the bot itself
+    if user_id != BOT_ID:
         client.chat_postMessage(
             channel=channel_id, text=getTopNews(user_id, message))
 
@@ -94,8 +33,8 @@ def handle_message(payload):
     channel_id = event.get("channel")
     user_id = event.get("user")
     message = event.get("text")
-    print(user_id, client.token)
-    if user_id != client.token:  # Check if the user is the bot itself
+    print(user_id, BOT_ID)
+    if user_id != BOT_ID:
         client.chat_postMessage(
             channel=channel_id, text=getTopNews(user_id, message))
 
