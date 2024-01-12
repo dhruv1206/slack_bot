@@ -27,6 +27,8 @@ def mention(payload):
     message = event.get("text").split("<@U06CV5K9LPR>")[1].strip()
     if user_id != BOT_ID:
         client.chat_postMessage(
+            channel=channel_id, text="Fetching news, please wait patiently! ⏳📰")
+        client.chat_postMessage(
             channel=channel_id, text=getTopNews(user_id, message))
 
 
@@ -39,6 +41,8 @@ def handle_message(payload):
     message = event.get("text")
     print(user_id, BOT_ID)
     if user_id != BOT_ID:
+        client.chat_postMessage(
+            channel=channel_id, text="Fetching news, please wait patiently! ⏳📰")
         client.chat_postMessage(
             channel=channel_id, text=getTopNews(user_id, message))
 
