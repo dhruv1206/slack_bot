@@ -5,6 +5,9 @@ import slack
 import os
 from slackeventsapi import SlackEventAdapter
 
+import scrape_gn
+from scrape_gn import scrape_google_news
+
 env_path = ".env"
 load_dotenv(dotenv_path=env_path)
 
@@ -41,22 +44,16 @@ def handle_message(payload):
 
 
 def getTopNews(user_id, message):
-    url = f"https://newsapi.org/v2/everything?q={message}&sortBy=publishedAt&apiKey=" + \
-        os.environ['NEWS_API_KEY']
-    response = requests.get(url)
+    # Use the scrape_google_news function to get top news articles
+    news_results = scrape_google_news(message)
 
-    if response.status_code == 200:
-        data = response.json()
+    if news_results:
+        news_message = f"Here are the top 5 news articles on {message}:\n"
 
-        if 'articles' in data:
-            articles = data['articles'][:5]
+        for index, result in enumerate(news_results, 1):
+            news_message += f"{index}. {result['title']}\n{result['url']}\n\n"
 
-            news_message = f"Here are the top 5 news articles on {message}:\n"
-
-            for index, article in enumerate(articles, 1):
-                news_message += f"{index}. {article['title']}\n"
-
-            return news_message
+        return news_message
 
     return f"Sorry, I couldn't fetch news on {message} at the moment."
 
@@ -67,4 +64,5 @@ def check():
 
 
 if __name__ == '__main__':
+    print(getTopNews("test", "India vs Afghnaistan"))
     app.run(debug=True, host='0.0.0.0', port=5000)
